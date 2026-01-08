@@ -142,7 +142,7 @@ struct WriteMetaData {
             auto file_without_double_slash = StringUtil::Replace(file.file_name, "\\", "/");
             // auto file_split = StringUtil::Split(file, "/");
             // auto file_name = file_split[file_split.size()-1];
-            auto file_name = file.file_name.substr(table_path.path.size());
+            auto file_name = file.file_name.substr(table_path.path.size() + 1);  // +1 to skip the separator
             InsertionOrderPreservingMap<string> partitions = {};
 
             // TODO: probably horribly wrong
