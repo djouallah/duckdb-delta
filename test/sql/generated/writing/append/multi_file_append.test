@@ -1,0 +1,34 @@
+# name: test/sql/generated/writing/append/multi_file_append.test
+# description: test inserting enough rows to produce multiple parquet files (issue #280)
+# group: [append]
+
+require parquet
+
+require delta
+
+require-env GENERATED_DATA_AVAILABLE
+
+# Copy test data to a writable tmp dir
+statement ok
+from copy_dir('data/generated/simple_table', '__TEST_DIR__/multi_file_append/simple_table');
+
+statement ok
+ATTACH '__TEST_DIR__/multi_file_append/simple_table/delta_lake' AS multi_file_tbl (TYPE delta);
+
+# Verify initial data
+query II
+SELECT count(*), sum(i) FROM multi_file_tbl;
+----
+10	45
+
+# Insert enough rows via SELECT to potentially produce multiple parquet files.
+# This reproduces issue #280 where DeltaInsert::Sink incorrectly asserts
+# chunk.size() == 1 but PhysicalCopyToFile returns one row per written file.
+statement ok
+INSERT INTO multi_file_tbl FROM range(0, 10000) t(i);
+
+# Verify all rows are present
+query II
+SELECT count(*), sum(i) FROM multi_file_tbl;
+----
+10010	49999545
